@@ -10,6 +10,7 @@ import (
 	"image/color"
 	// "math"
 	"math/rand"
+	"time"
 	// "fmt"
 )
 
@@ -108,6 +109,8 @@ func main() {
 	// Set up the window
 	ebiten.SetWindowSize(800, 800)
 	ebiten.SetWindowTitle("Bouncing Balls")
+
+	rand.Seed(time.Now().UnixNano())
 
 	// Initialize rigid bodies (balls)
 	n := 200 // Change this to the desired number of balls

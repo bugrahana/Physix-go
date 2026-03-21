@@ -4,6 +4,7 @@ import (
 	"image/color"
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -29,9 +30,8 @@ const (
 func update() error {
 	// Apply gravity and handle wall collisions for all balls
 	for _, ball := range balls {
-		gravity := vector.Vector{X: 0, Y: 0}
-		physix.ApplyForce(ball, gravity, dt)
-		physix.ApplyForce(ball, ball.Velocity.Scale(-2), dt)
+		netForce := ball.Velocity.Scale(-2) // gravity is 0, so net force is purely friction
+		physix.ApplyForce(ball, netForce, dt)
 		checkWallCollision(ball)
 	}
 
@@ -52,16 +52,16 @@ func update() error {
 
 	// Move the red ball with arrow keys
 	redBall := balls[redBallIdx]
-	if ebiten.IsKeyPressed(ebiten.KeyD) {
+	if ebiten.IsKeyPressed(ebiten.KeyD) || ebiten.IsKeyPressed(ebiten.KeyArrowRight) {
 		redBall.Velocity.X += 1
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyA) {
+	if ebiten.IsKeyPressed(ebiten.KeyA) || ebiten.IsKeyPressed(ebiten.KeyArrowLeft) {
 		redBall.Velocity.X -= 1
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyW) {
+	if ebiten.IsKeyPressed(ebiten.KeyW) || ebiten.IsKeyPressed(ebiten.KeyArrowUp) {
 		redBall.Velocity.Y -= 1
 	}
-	if ebiten.IsKeyPressed(ebiten.KeyS) {
+	if ebiten.IsKeyPressed(ebiten.KeyS) || ebiten.IsKeyPressed(ebiten.KeyArrowDown) {
 		redBall.Velocity.Y += 1
 	}
 
@@ -109,12 +109,17 @@ func draw(screen *ebiten.Image) {
 	ebitenutil.DrawRect(screen, 100.0, 100.0, 10, 550, color.RGBA{R: 0, G: 0xff, B: 0, A: 0}) // Left
 	ebitenutil.DrawRect(screen, 650.0, 100.0, 10, 550, color.RGBA{R: 0, G: 0xff, B: 0, A: 0}) // Right
 	ebitenutil.DrawRect(screen, 100.0, 650.0, 550, 10, color.RGBA{R: 0, G: 0xff, B: 0, A: 0}) // Down
+
+	ebitenutil.DebugPrint(screen, "Use WASD or Arrow Keys to move the RED box")
 }
 
 func main() {
 	// Set up the window
 	ebiten.SetWindowSize(800, 800)
 	ebiten.SetWindowTitle("Bouncing Balls")
+
+	// Seed the random generator
+	rand.Seed(time.Now().UnixNano())
 
 	// Initialize rigid bodies (balls)
 	n := 5 // Number of balls
