@@ -36,6 +36,9 @@ func NewPolygon(vertices []vector.Vector, mass float64, IsMovable bool) *Polygon
 
 // CalculateCentroid calculates the centroid of a polygon given its vertices.
 func CalculateCentroid(vertices []vector.Vector) vector.Vector {
+	if len(vertices) == 0 {
+		return vector.Vector{}
+	}
 	var centroid vector.Vector
 	for _, v := range vertices {
 		centroid.X += v.X
@@ -49,7 +52,9 @@ func CalculateCentroid(vertices []vector.Vector) vector.Vector {
 //Update position of polygon
 func (p *Polygon) UpdatePosition(){
 	p.Position = CalculateCentroid(p.Vertices)
-    p.Rotation = p.Torque / p.Mass // Update rotation based on torque and mass
+    if p.Mass != 0 {
+        p.Rotation = p.Torque / p.Mass // Update rotation based on torque and mass
+    }
 }
 
 
@@ -57,6 +62,9 @@ func (p *Polygon) UpdatePosition(){
 // IMPART Impulse on a body
 func (rb *Polygon) ApplyImpulse(impulse vector.Vector) {
     // Calculate the change in velocity using impulse and mass
+    if rb.Mass == 0 {
+        return
+    }
     change_velocity := impulse.Scale(1/rb.Mass);
     rb.Velocity = rb.Velocity.Add(change_velocity)
 
@@ -65,6 +73,9 @@ func (rb *Polygon) ApplyImpulse(impulse vector.Vector) {
 
 // Project calculates the projection of a polygon onto a given axis.
 func Project(p Polygon, axis vector.Vector) (float64, float64) {
+    if len(p.Vertices) == 0 {
+        return 0, 0
+    }
     min := axis.InnerProduct(p.Vertices[0])
     max := min
     for i := 1; i < len(p.Vertices); i++ {

@@ -13,6 +13,9 @@ func ApplyForcePolygon(pg *polygon.Polygon, force vector.Vector, dt float64) {
     if pg.IsMovable {
         // Use Newton's second law: F = ma -> a = F/m
         pg.Force = force
+        if pg.Mass == 0 {
+            return
+        }
         acceleration := vector.Vector{
             X: pg.Force.X / pg.Mass,
             Y: pg.Force.Y / pg.Mass,
@@ -58,6 +61,9 @@ func ApplyForce(rb *rigidbody.RigidBody, force vector.Vector, dt float64) {
 		// rb.Force = rb.Force.Add(force)
 
 		rb.Force = force
+		if rb.Mass == 0 {
+			return
+		}
 		acceleration := rb.Force.Scale(1 / rb.Mass)
 
 		// Update velocity using acceleration and time step

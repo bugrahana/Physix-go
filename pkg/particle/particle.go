@@ -19,6 +19,9 @@ func ApplyForce(body *PVEBody, force vector.Vector, dt float64) {
 	if body.IsMovable {
 		// F = ma -> a = F/m
 		body.Force = force
+		if body.Mass == 0 {
+			return
+		}
 		acceleration := body.Force.Scale(1 / body.Mass)
 
 		// Update velocity
@@ -28,7 +31,8 @@ func ApplyForce(body *PVEBody, force vector.Vector, dt float64) {
 		body.Position = body.Position.Add(body.Velocity.Scale(dt))
 
 		// Recalculate heat based on kinetic energy
-		body.Heat = body.Velocity.Scale(0.5).Magnitude()
+		speed := body.Velocity.Magnitude()
+		body.Heat = 0.5 * body.Mass * speed * speed
 	}
 }
 
@@ -48,13 +52,17 @@ func ResolveCollision(ball1, ball2 *rigidbody.RigidBody, dt float64) {
 		repulsiveForce := moveDirection.Scale(repulsiveForceMagnitude)
 
 		// Apply the repulsive force to the velocities
-		ball1.Velocity = ball1.Velocity.Add(repulsiveForce.Scale(dt / ball1.Mass).Scale(0.9))
-		ball2.Velocity = ball2.Velocity.Add(repulsiveForce.Scale(-dt / ball2.Mass).Scale(0.9))
+		if ball1.Mass != 0 {
+			ball1.Velocity = ball1.Velocity.Add(repulsiveForce.Scale(dt / ball1.Mass).Scale(0.9))
+		}
+		if ball2.Mass != 0 {
+			ball2.Velocity = ball2.Velocity.Add(repulsiveForce.Scale(-dt / ball2.Mass).Scale(0.9))
+		}
 
 		// Adjust positions slightly to avoid sticking
 		correctionFactor := 0.5
 		positionCorrection := moveDirection.Scale(correctionFactor * overlap * 5)
-		ball1.Force = ball1.Force.Add(positionCorrection)
-		ball2.Force = ball2.Force.Sub(positionCorrection)
+		ball1.Position = ball1.Position.Add(positionCorrection)
+		ball2.Position = ball2.Position.Sub(positionCorrection)
 	}
 }

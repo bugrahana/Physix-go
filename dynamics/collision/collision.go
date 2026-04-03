@@ -128,37 +128,23 @@ func PreventCircleRectangleOverlap(circle, rect *rigidbody.RigidBody) {
 	}
 }
 
+func bodyCenter(b *rigidbody.RigidBody) vector.Vector {
+	if b.Shape == "Circle" {
+		return b.Position
+	}
+	return vector.Vector{X: b.Position.X + b.Width/2, Y: b.Position.Y + b.Height/2}
+}
+
 func BounceOnCollision(body1, body2 *rigidbody.RigidBody, e float64) {
-	// fmt.Println("Entering BounceOnCollision function")
-	// defer fmt.Println("Exiting BounceOnCollision function")
+	center1 := bodyCenter(body1)
+	center2 := bodyCenter(body2)
 
 	if body1.IsMovable && body2.IsMovable {
-		// Calculate the center of mass velocities
 		v1 := body1.Velocity
 		m1 := body1.Mass
 		v2 := body2.Velocity
 		m2 := body2.Mass
 
-		//body1.Velocity = v1.Scale((m1 - e*m2) / (m1 + m2)).Add(v2.Scale((1 + e) * m2 / (m1 + m2)))
-		//body2.Velocity = v2.Scale((m2 - e*m1) / (m1 + m2)).Add(v1.Scale((1 + e) * m1 / (m1 + m2)))
-		// Velocity after
-		center1 := vector.NewVector(0, 0)
-		if body1.Shape == "Circle" {
-			center1.X = body1.Position.X
-			center1.Y = body1.Position.Y
-		} else {
-			center1.X = body1.Position.X + body1.Width/2
-			center1.Y = body1.Position.Y + body1.Height/2
-		}
-
-		center2 := vector.NewVector(0, 0)
-		if body2.Shape == "Circle" {
-			center2.X = body2.Position.X
-			center2.Y = body2.Position.Y
-		} else {
-			center2.X = body2.Position.X + body2.Width/2
-			center2.Y = body2.Position.Y + body2.Height/2
-		}
 		r12 := center2.Sub(center1)
 		r21 := center1.Sub(center2)
 		v1alongr12 := r12.Normalize().Scale(v1.InnerProduct(r12.Normalize()))
@@ -167,17 +153,31 @@ func BounceOnCollision(body1, body2 *rigidbody.RigidBody, e float64) {
 		v2perp := v2.Sub(v2alongr21)
 		newVelocity1normal := v1alongr12.Scale((m1 - e*m2) / (m1 + m2)).Add(v2alongr21.Scale((1 + e) * m2 / (m1 + m2)))
 		newVelocity2normal := v2alongr21.Scale((m2 - e*m1) / (m1 + m2)).Add(v1alongr12.Scale((1 + e) * m1 / (m1 + m2)))
-		newVecloity1 := newVelocity1normal.Add(v1perp)
-		newVecloity2 := newVelocity2normal.Add(v2perp)
+		newVelocity1 := newVelocity1normal.Add(v1perp)
+		newVelocity2 := newVelocity2normal.Add(v2perp)
 
-		body1.Velocity = newVecloity1
-		body2.Velocity = newVecloity2
+		body1.Velocity = newVelocity1
+		body2.Velocity = newVelocity2
 	} else if body1.IsMovable && !body2.IsMovable {
-		// Bounce only rect1
-		body1.Velocity = body1.Velocity.Scale(-e)
+		// Reflect only the normal component of velocity
+		normal := center2.Sub(center1)
+		if normal.Magnitude() == 0 {
+			body1.Velocity = body1.Velocity.Scale(-e)
+			return
+		}
+		n := normal.Normalize()
+		vNormal := n.Scale(body1.Velocity.InnerProduct(n))
+		body1.Velocity = body1.Velocity.Sub(vNormal.Scale(1 + e))
 	} else if !body1.IsMovable && body2.IsMovable {
-		// Bounce only rect2
-		body2.Velocity = body2.Velocity.Scale(-e)
+		// Reflect only the normal component of velocity
+		normal := center1.Sub(center2)
+		if normal.Magnitude() == 0 {
+			body2.Velocity = body2.Velocity.Scale(-e)
+			return
+		}
+		n := normal.Normalize()
+		vNormal := n.Scale(body2.Velocity.InnerProduct(n))
+		body2.Velocity = body2.Velocity.Sub(vNormal.Scale(1 + e))
 	}
 	// No bounce if both are static
 }

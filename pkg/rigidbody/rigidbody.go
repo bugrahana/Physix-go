@@ -51,8 +51,9 @@ func (rb *RigidBody) rotateCoordinates(theta float64) (vector.Vector) {
 func (rb *RigidBody) UpdateRotation(dt float64) {
     // Update rotation based on angular velocity
     angle := rb.AngularVelocity * dt
-    rb.Position.X = math.Cos(angle)*rb.Position.X - math.Sin(angle)*rb.Position.Y
-    rb.Position.Y = math.Sin(angle)*rb.Position.X + math.Cos(angle)*rb.Position.Y
+    origX := rb.Position.X
+    rb.Position.X = math.Cos(angle)*origX - math.Sin(angle)*rb.Position.Y
+    rb.Position.Y = math.Sin(angle)*origX + math.Cos(angle)*rb.Position.Y
 }
 
 // ApplyTorque applies a torque to the rigid body.
@@ -65,6 +66,9 @@ func (rb *RigidBody) ApplyTorque(torque float64) {
 func (rb *RigidBody) ApplyImpulse(impulse vector.Vector) {
     // Calculate the change in velocity using impulse and mass
    
+    if rb.Mass == 0 {
+        return
+    }
     change_velocity := impulse.Scale(1/rb.Mass);
     rb.Velocity = rb.Velocity.Add(change_velocity)
 
